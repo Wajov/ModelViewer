@@ -3,7 +3,6 @@ project(ModelViewer)
 
 include_directories(
     include
-    lib
     lib/glad/include
 )
 aux_source_directory(src SOURCE)
