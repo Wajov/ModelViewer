@@ -1,27 +1,32 @@
 #include "Mesh.h"
 
-Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<Texture> textures) {
+Mesh::Mesh(std::vector<Vertex> &vertices, std::vector<unsigned int> &indices, Texture &ambient, Texture &diffuse, Texture &specular, Texture &normal) {
     this->vertices = vertices;
     this->indices = indices;
-    this->textures = textures;
+    this->ambient = ambient;
+    this->diffuse = diffuse;
+    this->specular = specular;
+    this->normal = normal;
 }
 
+Mesh::~Mesh() {}
+
 void Mesh::coordinateRange(float &xMin, float &xMax, float &yMin, float &yMax, float &zMin, float &zMax) {
-    xMin = yMin = zMin = 1e38f;
-    xMax = yMax = zMax = -1e38f;
-    for (unsigned int i = 0; i < vertices.size(); i++) {
-        xMin = std::min(xMin, vertices[i].position.x);
-        xMax = std::max(xMax, vertices[i].position.x);
-        yMin = std::min(yMin, vertices[i].position.y);
-        yMax = std::max(yMax, vertices[i].position.y);
-        zMin = std::min(zMin, vertices[i].position.z);
-        zMax = std::max(zMax, vertices[i].position.z);
+    xMin = yMin = zMin = FLT_MAX;
+    xMax = yMax = zMax = -FLT_MAX;
+    for (Vertex &vertex : vertices) {
+        xMin = std::min(xMin, vertex.position.x);
+        xMax = std::max(xMax, vertex.position.x);
+        yMin = std::min(yMin, vertex.position.y);
+        yMax = std::max(yMax, vertex.position.y);
+        zMin = std::min(zMin, vertex.position.z);
+        zMax = std::max(zMax, vertex.position.z);
     }
 }
 
-void Mesh::recenter(glm::vec3 center) {
-    for (int i = 0; i < vertices.size(); i++)
-        vertices[i].position -= center;
+void Mesh::recenter(glm::vec3 &center) {
+    for (Vertex &vertex : vertices)
+        vertex.position -= center;
 }
 
 void Mesh::bind() {
@@ -41,33 +46,35 @@ void Mesh::bind() {
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, normal));
     glEnableVertexAttribArray(2);
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, uv));
+    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, tangent));
     glEnableVertexAttribArray(3);
-    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, tan));
+    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, bitangent));
     glEnableVertexAttribArray(4);
-    glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, bitan));
+    glVertexAttribPointer(4, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, uv));
 
     glBindVertexArray(0);
 }
 
-void Mesh::render(Shader shader) {
-    unsigned int diffuse = 0, specular = 0, normal = 0, height = 0;
-    for (unsigned int i = 0; i < textures.size(); i++) {
-        glActiveTexture(GL_TEXTURE0 + i);
-        std::string number, name = textures[i].type;
+void Mesh::render(Shader &shader) {
+    shader.setInt("ambientExist", ambient.getExist());
+    shader.setInt("ambientTexture", 0);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, ambient.getId());
 
-        if (name == "texture_diffuse")
-            number = std::to_string(++diffuse);
-        else if (name == "texture_specular")
-            number = std::to_string(++specular);
-        else if (name == "texture_normal")
-            number = std::to_string(++normal);
-        else if (name == "texture_height")
-            number = std::to_string(++height);
+    shader.setInt("diffuseExist", diffuse.getExist());
+    shader.setInt("diffuseTexture", 1);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, diffuse.getId());
 
-        shader.setInt((name + number).c_str(), i);
-        glBindTexture(GL_TEXTURE_2D, textures[i].id);
-    }
+    shader.setInt("specularExist", specular.getExist());
+    shader.setInt("specularTexture", 2);
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, specular.getId());
+
+    shader.setInt("normalExist", normal.getExist());
+    shader.setInt("normalTexture", 3);
+    glActiveTexture(GL_TEXTURE3);
+    glBindTexture(GL_TEXTURE_2D, normal.getId());
 
     glBindVertexArray(vao);
     glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);

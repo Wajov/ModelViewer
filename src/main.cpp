@@ -40,8 +40,8 @@ void cursorPosCallback(GLFWwindow* window, double x, double y) {
         rotate = glm::rotate(glm::mat4(1.0f), 10.0f * acos(angle), axis) * rotate;
     }
 
-    lastX = x;
-    lastY = y;
+    lastX = (int)x;
+    lastY = (int)y;
 }
 
 void scrollCallback(GLFWwindow* window, double x, double y) {
@@ -59,8 +59,8 @@ int main(int argc, char **argv) {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    GLFWwindow* window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "ModelViewer", NULL, NULL);
-    if (window == NULL) {
+    GLFWwindow* window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "ModelViewer", nullptr, nullptr);
+    if (window == nullptr) {
         std::cerr << "Failed to create GLFW window" << std::endl;
         glfwTerminate();
         return -1;
@@ -79,7 +79,7 @@ int main(int argc, char **argv) {
     glEnable(GL_DEPTH_TEST);
 
     Shader shader = Shader("shader/VertexShader.glsl", "shader/FragmentShader.glsl");
-    Model model("model/nanosuit.obj");
+    Model model("model/cylinder/cylinder.obj");
 
     while (!glfwWindowShouldClose(window)) {
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);

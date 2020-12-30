@@ -1,7 +1,10 @@
 #ifndef SHADER_H
 #define SHADER_H
 
-#include <bits/stdc++.h>
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <string>
 
 #include <glad/glad.h>
 #include <glm/glm.hpp>
@@ -11,14 +14,15 @@ private:
     unsigned int program;
 
 public:
-    Shader(const char *vertexShaderPath, const char *fragmentShaderPath);
+    Shader(const std::string &vertexShaderPath, const std::string &fragmentShaderPath);
+    ~Shader();
     void use();
-    void setInt(const char *name, int value);
-    void setFloat(const char *name, float value);
-    void setVec2(const char *name, glm::vec2 value);
-    void setVec3(const char *name, glm::vec3 value);
-    void setVec4(const char *name, glm::vec4 value);
-    void setMat4(const char *name, glm::mat4 value);
+    void setInt(const std::string &name, int value);
+    void setFloat(const std::string &name, float value);
+    void setVec2(const std::string &name, glm::vec2 &value);
+    void setVec3(const std::string &name, glm::vec3 &value);
+    void setVec4(const std::string &name, glm::vec4 &value);
+    void setMat4(const std::string &name, glm::mat4 &value);
 };
 
 #endif

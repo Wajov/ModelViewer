@@ -2,32 +2,42 @@
 
 in vec3 vertexPosition;
 in vec3 vertexNormal;
+in vec3 vertexTangent;
+in vec3 vertexBitangent;
 in vec2 vertexUV;
 
-uniform sampler2D textureSampler;
+uniform int ambientExist;
+uniform sampler2D ambientTexture;
+uniform int diffuseExist;
+uniform sampler2D diffuseTexture;
+uniform int specularExist;
+uniform sampler2D specularTexture;
+uniform int normalExist;
+uniform sampler2D normalTexture;
 uniform vec3 lightDirection;
 uniform vec3 cameraPosition;
 
 void main() {
-    vec3 a, b;
-    float cosine;
-
-    vec3 color = vec3(texture(textureSampler, vertexUV));
-    vec3 ambientColor = vec3(0.1, 0.1, 0.1) * color;
-    vec3 diffuseColor = vec3(0.6, 0.6, 0.6) * color;
-    vec3 specularColor = vec3(0.3, 0.3, 0.3);
+    vec3 ambientColor, diffuseColor, specularColor;
+    if (ambientExist == 1 || diffuseExist == 1 || specularExist == 1) {
+        ambientColor = ambientExist == 1 ? vec3(texture(ambientTexture, vertexUV)) : vec3(0, 0, 0);
+        diffuseColor = diffuseExist == 1 ? vec3(texture(diffuseTexture, vertexUV)) : vec3(0, 0, 0);
+        specularColor = specularExist == 1 ? vec3(texture(specularTexture, vertexUV)) : vec3(0, 0, 0);
+    } else {
+        ambientColor = 0.1 * vec3(1, 1, 1);
+        diffuseColor = 0.6 * vec3(1, 1, 1);
+        specularColor = 0.3 * vec3(1, 1, 1);
+    }
 
     vec3 ambient = ambientColor;
 
-    a = normalize(vertexNormal);
-    b = normalize(-lightDirection);
-    cosine = clamp(dot(a, b), 0, 1);
-    vec3 diffuse = diffuseColor * cosine;
+    vec3 N = normalize(normalExist == 1 ? mat3(vertexTangent, vertexBitangent, vertexNormal) * (vec3(texture(normalTexture, vertexUV)) * 2 - vec3(1, 1, 1)) : vertexNormal);
+    vec3 L = normalize(-lightDirection);
+    vec3 diffuse = diffuseColor * clamp(dot(N, L), 0, 1);
 
-    a = normalize(reflect(-b, a));
-    b = normalize(cameraPosition - vertexPosition);
-    cosine = clamp(dot(a, b), 0, 1);
-    vec3 specular = specularColor * pow(cosine, 5);
+    vec3 V = normalize(cameraPosition - vertexPosition);
+    vec3 H = normalize(L + V);
+    vec3 specular = specularColor * pow(clamp(dot(N, H), 0, 1), 5);
 
     gl_FragColor = vec4(ambient + diffuse + specular, 1);
 }
