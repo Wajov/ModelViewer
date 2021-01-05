@@ -1,10 +1,7 @@
 cmake_minimum_required(VERSION 3.0)
 project(ModelViewer)
 
-include_directories(
-    include
-    lib/glad/include
-)
+include_directories(include)
 aux_source_directory(src SOURCE)
 add_executable(ModelViewer ${SOURCE})
 
