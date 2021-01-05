@@ -16,11 +16,11 @@ add_subdirectory(lib/glad)
 
 # GLFW
 find_package(glfw3 REQUIRED)
-set(CMAKE_CXX_LINK_EXECUTABLE "${CMAKE_CXX_LINK_EXECUTABLE} -ldl")
 
 # Assimp
 find_package(assimp REQUIRED)
 
+set(CMAKE_CXX_LINK_EXECUTABLE "${CMAKE_CXX_LINK_EXECUTABLE} -ldl")
 target_link_libraries(
     ModelViewer
     glad
