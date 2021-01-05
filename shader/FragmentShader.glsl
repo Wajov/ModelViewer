@@ -20,18 +20,18 @@ uniform vec3 cameraPosition;
 void main() {
     vec3 ambientColor, diffuseColor, specularColor;
     if (ambientExist == 1 || diffuseExist == 1 || specularExist == 1) {
-        ambientColor = ambientExist == 1 ? vec3(texture(ambientTexture, vertexUV)) : vec3(0, 0, 0);
-        diffuseColor = diffuseExist == 1 ? vec3(texture(diffuseTexture, vertexUV)) : vec3(0, 0, 0);
-        specularColor = specularExist == 1 ? vec3(texture(specularTexture, vertexUV)) : vec3(0, 0, 0);
+        ambientColor = ambientExist == 1 ? vec3(texture(ambientTexture, vertexUV)) : vec3(0);
+        diffuseColor = diffuseExist == 1 ? vec3(texture(diffuseTexture, vertexUV)) : vec3(0);
+        specularColor = specularExist == 1 ? vec3(texture(specularTexture, vertexUV)) : vec3(0);
     } else {
-        ambientColor = 0.1 * vec3(1, 1, 1);
-        diffuseColor = 0.6 * vec3(1, 1, 1);
-        specularColor = 0.3 * vec3(1, 1, 1);
+        ambientColor = vec3(0.1);
+        diffuseColor = vec3(0.6);
+        specularColor = vec3(0.3);
     }
 
     vec3 ambient = ambientColor;
 
-    vec3 N = normalize(normalExist == 1 ? mat3(vertexTangent, vertexBitangent, vertexNormal) * (vec3(texture(normalTexture, vertexUV)) * 2 - vec3(1, 1, 1)) : vertexNormal);
+    vec3 N = normalize(normalExist == 1 ? mat3(vertexTangent, vertexBitangent, vertexNormal) * (vec3(texture(normalTexture, vertexUV)) * 2 - vec3(1)) : vertexNormal);
     vec3 L = normalize(-lightDirection);
     vec3 diffuse = diffuseColor * clamp(dot(N, L), 0, 1);
 
