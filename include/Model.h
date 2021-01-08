@@ -1,18 +1,22 @@
 #ifndef MODEL_H
 #define MODEL_H
 
-#include <climits>
+#include <algorithm>
+#include <cfloat>
 #include <iostream>
 #include <string>
 #include <vector>
 
+#include <glm/glm.hpp>
 #include <stb/stb_image.h>
 #include <assimp/Importer.hpp>
-#include <assimp/Exporter.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 
+#include "Vertex.h"
+#include "Texture.h"
 #include "Mesh.h"
+#include "Shader.h"
 
 class Model {
 private:

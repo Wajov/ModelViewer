@@ -50,8 +50,6 @@ void Model::processNode(aiNode *node, const aiScene *scene) {
 
 Mesh Model::processMesh(aiMesh *mesh, const aiScene *scene) {
     std::vector<Vertex> vertices;
-    std::vector<unsigned int> indices;
-
     for (unsigned int i = 0; i < mesh->mNumVertices; i++) {
         glm::vec3 position(mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z);
         glm::vec3 normal(mesh->mNormals[i].x, mesh->mNormals[i].y, mesh->mNormals[i].z);
@@ -64,6 +62,7 @@ Mesh Model::processMesh(aiMesh *mesh, const aiScene *scene) {
             vertices.push_back(Vertex(position, normal));
     }
 
+    std::vector<unsigned int> indices;
     for (unsigned int i = 0; i < mesh->mNumFaces; i++)
         for (unsigned int j = 0; j < mesh->mFaces[i].mNumIndices; j++)
             indices.push_back(mesh->mFaces[i].mIndices[j]);

@@ -9,9 +9,15 @@
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 
+enum ShaderType {
+    VERTEX_SHADER,
+    FRAGMENT_SHADER
+};
+
 class Shader {
 private:
     unsigned int program;
+    int processShader(const std::string &path, ShaderType type, bool &success);
 
 public:
     Shader(const std::string &vertexShaderPath, const std::string &fragmentShaderPath);
