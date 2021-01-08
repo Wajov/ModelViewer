@@ -1,6 +1,4 @@
-#define _USE_MATH_DEFINES
-#define STB_IMAGE_IMPLEMENTATION
-
+#include <cmath>
 #include <string>
 #include <iostream>
 
@@ -37,7 +35,7 @@ void cursorPosCallback(GLFWwindow* window, double x, double y) {
         glm::vec3 b = glm::normalize(glm::vec3((float)x / WINDOW_WIDTH - 0.5f, 0.5f - (float)y / WINDOW_HEIGHT, 1.0f));
         glm::vec3 axis = glm::cross(a, b);
         float angle = glm::dot(a, b);
-        rotate = glm::rotate(glm::mat4(1.0f), 10.0f * acos(angle), axis) * rotate;
+        rotate = glm::rotate(glm::mat4(1.0f), 10.0f * std::acos(angle), axis) * rotate;
     }
 
     lastX = (int)x;

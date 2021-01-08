@@ -1,3 +1,5 @@
+#define STB_IMAGE_IMPLEMENTATION
+
 #include "Model.h"
 
 Model::Model(const std::string &path) {
