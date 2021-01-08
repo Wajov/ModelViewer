@@ -102,7 +102,7 @@ unsigned int Model::processTexture(std::string &name) {
     int width, height, channels;
     unsigned char *data = stbi_load(path.c_str(), &width, &height, &channels, 0);
     if (data) {
-        GLenum format;
+        unsigned int format;
         switch (channels) {
             case 1:
                 format = GL_RED;
@@ -124,7 +124,7 @@ unsigned int Model::processTexture(std::string &name) {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     } else
-        std::cerr << "Failed to load texture file: " << path << std::endl;
+        std::cerr << "Failed to load texture file " << path << std::endl;
     
     stbi_image_free(data);
     return id;

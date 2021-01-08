@@ -2,8 +2,8 @@
 
 Shader::Shader(const std::string &vertexShaderPath, const std::string &fragmentShaderPath) {
     bool vertexShaderSuccess, fragmentShaderSuccess;
-    int vertexShader = processShader(vertexShaderPath, VERTEX_SHADER, vertexShaderSuccess);
-    int fragmentShader = processShader(fragmentShaderPath, FRAGMENT_SHADER, fragmentShaderSuccess);
+    int vertexShader = processShader(vertexShaderPath, GL_VERTEX_SHADER, vertexShaderSuccess);
+    int fragmentShader = processShader(fragmentShaderPath, GL_FRAGMENT_SHADER, fragmentShaderSuccess);
     if (!vertexShaderSuccess || !fragmentShaderSuccess) {
         this->program = 0;
         return;
@@ -13,9 +13,9 @@ Shader::Shader(const std::string &vertexShaderPath, const std::string &fragmentS
     glAttachShader(program, vertexShader);
     glAttachShader(program, fragmentShader);
     glLinkProgram(program);
-    int programSuccess;
-    glGetProgramiv(program, GL_LINK_STATUS, &programSuccess);
-    if (!programSuccess) {
+    int success;
+    glGetProgramiv(program, GL_LINK_STATUS, &success);
+    if (!success) {
         char info[512];
         glGetProgramInfoLog(program, 512, nullptr, info);
         std::cerr << "Failed to link shader program:" << std::endl << info << std::endl;
@@ -30,7 +30,7 @@ Shader::Shader(const std::string &vertexShaderPath, const std::string &fragmentS
 
 Shader::~Shader() {}
 
-int Shader::processShader(const std::string &path, ShaderType type, bool &success) {
+int Shader::processShader(const std::string &path, unsigned int type, bool &success) {
     std::ifstream fileStream(path);
     if (!(success = fileStream.is_open())) {
         std::cerr << "Failed to open shader file " << path << std::endl;
@@ -42,7 +42,7 @@ int Shader::processShader(const std::string &path, ShaderType type, bool &succes
     fileStream.close();
     std::string source = stringStream.str();
 
-    int shader = glCreateShader(type == VERTEX_SHADER ? GL_VERTEX_SHADER : GL_FRAGMENT_SHADER);
+    int shader = glCreateShader(type);
     const char *pointer = source.c_str();
     glShaderSource(shader, 1, &pointer, nullptr);
     glCompileShader(shader);
