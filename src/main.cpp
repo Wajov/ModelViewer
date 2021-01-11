@@ -14,7 +14,7 @@
 const unsigned int WINDOW_WIDTH = 1920;
 const unsigned int WINDOW_HEIGHT = 1080;
 
-int lastX = INT_MIN, lastY = INT_MIN;
+int lastX, lastY;
 float factor = 1.0f;
 bool press;
 glm::mat4 rotate(1.0f);
@@ -24,9 +24,10 @@ void framebufferSizeCallback(GLFWwindow* window, int width, int height) {
 }
 
 void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
-    if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
+    if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
         press = true;
-    else if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_RELEASE)
+        lastX = lastY = INT_MIN;
+    } else if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_RELEASE)
         press = false;
 }
 
@@ -78,7 +79,7 @@ int main(int argc, char **argv) {
     glEnable(GL_DEPTH_TEST);
 
     Shader shader = Shader("shader/VertexShader.glsl", "shader/FragmentShader.glsl");
-    Model model("model/cylinder/cylinder.obj");
+    Model model("model/suzanne.obj");
 
     while (!glfwWindowShouldClose(window)) {
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
