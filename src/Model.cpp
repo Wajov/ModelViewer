@@ -36,11 +36,6 @@ Model::Model(const std::string &path) {
 
 Model::~Model() {}
 
-void Model::render(Shader &shader) {
-    for (Mesh &mesh : meshes)
-        mesh.render(shader);
-}
-
 void Model::processNode(aiNode *node, const aiScene *scene) {
     for (unsigned int i = 0; i < node->mNumMeshes; i++)
         meshes.push_back(processMesh(scene->mMeshes[node->mMeshes[i]], scene));
@@ -128,4 +123,9 @@ unsigned int Model::processTexture(std::string &name) {
     
     stbi_image_free(data);
     return id;
+}
+
+void Model::render(Shader &shader) {
+    for (Mesh &mesh : meshes)
+        mesh.render(shader);
 }
