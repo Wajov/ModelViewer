@@ -5,27 +5,33 @@
 #include <cfloat>
 #include <vector>
 
-#include <glad/glad.h>
-#include <glm/glm.hpp>
+#include <QVector3D>
+#include <QImage>
+#include <QOpenGLFunctions>
+#include <QOpenGLVertexArrayObject>
+#include <QOpenGLBuffer>
+#include <QOpenGLTexture>
+#include <QOpenGLShaderProgram>
 
 #include "Vertex.h"
-#include "Texture.h"
-#include "Shader.h"
 
-class Mesh {
+class Mesh : protected QOpenGLFunctions {
 private:
     std::vector<Vertex> vertices;
     std::vector<unsigned int> indices;
-    Texture ambient, diffuse, specular, normal;
-    unsigned int vao;
+    QImage ambientImage, diffuseImage, specularImage, normalImage;
+    QOpenGLTexture *ambientTexture, *diffuseTexture, *specularTexture, *normalTexture;
+    QOpenGLVertexArrayObject *vao;
+    QOpenGLBuffer vbo, ebo;
+    void processTexture(QOpenGLTexture *texture);
 
 public:
-    Mesh(std::vector<Vertex> &vertices, std::vector<unsigned int> &indices, Texture &ambient, Texture &diffuse, Texture &specular, Texture &normal);
+    Mesh(std::vector<Vertex> &vertices, std::vector<unsigned int> &indices, QImage &ambientImage, QImage &diffuseImage, QImage &specularImage, QImage &normalImage);
     ~Mesh();
     void coordinateRange(float &xMin, float &xMax, float &yMin, float &yMax, float &zMin, float &zMax);
-    void recenter(glm::vec3 &center);
-    void bind();
-    void render(Shader &shader);
+    void recenter(QVector3D &center);
+    void bind(QOpenGLShaderProgram &program);
+    void render(QOpenGLShaderProgram &program);
 };
 
 #endif

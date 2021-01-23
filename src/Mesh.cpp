@@ -1,84 +1,132 @@
 #include "Mesh.h"
 
-Mesh::Mesh(std::vector<Vertex> &vertices, std::vector<unsigned int> &indices, Texture &ambient, Texture &diffuse, Texture &specular, Texture &normal) {
+Mesh::Mesh(std::vector<Vertex> &vertices, std::vector<unsigned int> &indices, QImage &ambientImage, QImage &diffuseImage, QImage &specularImage, QImage &normalImage) {
     this->vertices = vertices;
     this->indices = indices;
-    this->ambient = ambient;
-    this->diffuse = diffuse;
-    this->specular = specular;
-    this->normal = normal;
+    this->ambientImage = ambientImage;
+    this->diffuseImage = diffuseImage;
+    this->specularImage = specularImage;
+    this->normalImage = normalImage;
+    vao = nullptr;
+    ambientTexture = diffuseTexture = specularTexture = normalTexture = nullptr;
 }
 
-Mesh::~Mesh() {}
+Mesh::~Mesh() {
+    delete vao;
+    delete ambientTexture;
+    delete diffuseTexture;
+    delete specularTexture;
+    delete normalTexture;
+}
+
+void Mesh::processTexture(QOpenGLTexture *texture) {
+    texture->setWrapMode(QOpenGLTexture::Repeat);
+    texture->setMinificationFilter(QOpenGLTexture::LinearMipMapLinear);
+    texture->setMagnificationFilter(QOpenGLTexture::Linear);
+    texture->generateMipMaps();
+}
 
 void Mesh::coordinateRange(float &xMin, float &xMax, float &yMin, float &yMax, float &zMin, float &zMax) {
     xMin = yMin = zMin = FLT_MAX;
     xMax = yMax = zMax = -FLT_MAX;
     for (Vertex &vertex : vertices) {
-        xMin = std::min(xMin, vertex.position.x);
-        xMax = std::max(xMax, vertex.position.x);
-        yMin = std::min(yMin, vertex.position.y);
-        yMax = std::max(yMax, vertex.position.y);
-        zMin = std::min(zMin, vertex.position.z);
-        zMax = std::max(zMax, vertex.position.z);
+        xMin = std::min(xMin, vertex.position.x());
+        xMax = std::max(xMax, vertex.position.x());
+        yMin = std::min(yMin, vertex.position.y());
+        yMax = std::max(yMax, vertex.position.y());
+        zMin = std::min(zMin, vertex.position.z());
+        zMax = std::max(zMax, vertex.position.z());
     }
 }
 
-void Mesh::recenter(glm::vec3 &center) {
+void Mesh::recenter(QVector3D &center) {
     for (Vertex &vertex : vertices)
         vertex.position -= center;
 }
 
-void Mesh::bind() {
-    unsigned vbo, ebo;
-    glGenVertexArrays(1, &vao);
-    glGenBuffers(1, &vbo);
-    glGenBuffers(1, &ebo);
+void Mesh::bind(QOpenGLShaderProgram &program) {
+    initializeOpenGLFunctions();
 
-    glBindVertexArray(vao);
-    glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    glBufferData(GL_ARRAY_BUFFER, this->vertices.size() * sizeof(Vertex), &(this->vertices[0]), GL_STATIC_DRAW);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, this->indices.size() * sizeof(unsigned int), &(this->indices[0]), GL_STATIC_DRAW);
+    vao = new QOpenGLVertexArrayObject();
+    QOpenGLVertexArrayObject::Binder binder(vao);
 
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)0);
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, normal));
-    glEnableVertexAttribArray(2);
-    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, tangent));
-    glEnableVertexAttribArray(3);
-    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, bitangent));
-    glEnableVertexAttribArray(4);
-    glVertexAttribPointer(4, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, uv));
+    vbo = QOpenGLBuffer(QOpenGLBuffer::VertexBuffer);
+    vbo.create();
+    vbo.bind();
+    vbo.allocate(&(vertices[0]), vertices.size() * sizeof(Vertex));
 
-    glBindVertexArray(0);
+    ebo = QOpenGLBuffer(QOpenGLBuffer::IndexBuffer);
+    ebo.create();
+    ebo.bind();
+    ebo.allocate(&(indices[0]), indices.size() * sizeof(unsigned int));
+
+    int attributePosition = program.attributeLocation("position");
+    program.setAttributeBuffer(attributePosition, GL_FLOAT, offsetof(Vertex, position), 3, sizeof(Vertex));
+    program.enableAttributeArray(attributePosition);
+
+    int attributeNormal = program.attributeLocation("normal");
+    program.setAttributeBuffer(attributeNormal, GL_FLOAT, offsetof(Vertex, normal), 3, sizeof(Vertex));
+    program.enableAttributeArray(attributeNormal);
+
+    int attributeTangent = program.attributeLocation("tangent");
+    program.setAttributeBuffer(attributeTangent, GL_FLOAT, offsetof(Vertex, tangent), 3, sizeof(Vertex));
+    program.enableAttributeArray(attributeTangent);
+
+    int attributeBitanget = program.attributeLocation("bitangent");
+    program.setAttributeBuffer(attributeBitanget, GL_FLOAT, offsetof(Vertex, bitangent), 3, sizeof(Vertex));
+    program.enableAttributeArray(attributeBitanget);
+
+    int attributeUV = program.attributeLocation("uv");
+    program.setAttributeBuffer(attributeUV, GL_FLOAT, offsetof(Vertex, uv), 2, sizeof(Vertex));
+    program.enableAttributeArray(attributeUV);
+
+    if (!ambientImage.isNull()) {
+        ambientTexture = new QOpenGLTexture(ambientImage);
+        processTexture(ambientTexture);
+    }
+    if (!diffuseImage.isNull()) {
+        diffuseTexture = new QOpenGLTexture(diffuseImage);
+        processTexture(diffuseTexture);
+    }
+    if (!specularImage.isNull()) {
+        specularTexture = new QOpenGLTexture(specularImage);
+        processTexture(specularTexture);
+    }
+    if (!normalImage.isNull()) {
+        normalTexture = new QOpenGLTexture(normalImage);
+        processTexture(normalTexture);
+    }
 }
 
-void Mesh::render(Shader &shader) {
-    shader.setInt("ambientExist", ambient.getExist());
-    shader.setInt("ambientTexture", 0);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, ambient.getId());
+void Mesh::render(QOpenGLShaderProgram &program) {
+    program.setUniformValue("ambientExist", ambientTexture != nullptr);
+    if (ambientTexture != nullptr) {
+        program.setUniformValue("ambientTexture", 0);
+        glActiveTexture(GL_TEXTURE0);
+        ambientTexture->bind();
+    }
 
-    shader.setInt("diffuseExist", diffuse.getExist());
-    shader.setInt("diffuseTexture", 1);
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, diffuse.getId());
+    program.setUniformValue("diffuseExist", diffuseTexture != nullptr);
+    if (diffuseTexture != nullptr) {
+        program.setUniformValue("diffuseTexture", 1);
+        glActiveTexture(GL_TEXTURE1);
+        diffuseTexture->bind();
+    }
 
-    shader.setInt("specularExist", specular.getExist());
-    shader.setInt("specularTexture", 2);
-    glActiveTexture(GL_TEXTURE2);
-    glBindTexture(GL_TEXTURE_2D, specular.getId());
+    program.setUniformValue("specularExist", specularTexture != nullptr);
+    if (specularTexture != nullptr) {
+        program.setUniformValue("specularTexture", 2);
+        glActiveTexture(GL_TEXTURE2);
+        specularTexture->bind();
+    }
 
-    shader.setInt("normalExist", normal.getExist());
-    shader.setInt("normalTexture", 3);
-    glActiveTexture(GL_TEXTURE3);
-    glBindTexture(GL_TEXTURE_2D, normal.getId());
+    program.setUniformValue("normalExist", normalTexture != nullptr);
+    if (normalTexture != nullptr) {
+        program.setUniformValue("normalTexture", 3);
+        glActiveTexture(GL_TEXTURE3);
+        normalTexture->bind();
+    }
 
-    glBindVertexArray(vao);
-    glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
-    glBindVertexArray(0);
-
-    glActiveTexture(GL_TEXTURE0);
+    QOpenGLVertexArrayObject::Binder binder(vao);
+    glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, nullptr);
 }

@@ -1,14 +1,15 @@
 #ifndef VERTEX_H
 #define VERTEX_H
 
-#include <glm/glm.hpp>
+#include <QVector2D>
+#include <QVector3D>
 
 class Vertex {
 public:
-    glm::vec3 position, normal, tangent, bitangent;
-    glm::vec2 uv;
-    Vertex(glm::vec3 &position, glm::vec3 &normal);
-    Vertex(glm::vec3 &position, glm::vec3 &normal, glm::vec3 &tangent, glm::vec3 &bitangent, glm::vec2 &uv);
+    QVector3D position, normal, tangent, bitangent;
+    QVector2D uv;
+    Vertex(QVector3D &position, QVector3D &normal);
+    Vertex(QVector3D &position, QVector3D &normal, QVector3D &tangent, QVector3D &bitangent, QVector2D &uv);
     ~Vertex();
 };
 

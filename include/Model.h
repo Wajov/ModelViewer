@@ -7,31 +7,30 @@
 #include <string>
 #include <vector>
 
-#include <glm/glm.hpp>
-#include <stb/stb_image.h>
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
+#include <QVector2D>
+#include <QVector3D>
+#include <QImage>
+#include <QOpenGLShaderProgram>
 
 #include "Vertex.h"
-#include "Texture.h"
 #include "Mesh.h"
-#include "Shader.h"
 
 class Model {
 private:
-    std::vector<Texture> textures;
     std::vector<Mesh> meshes;
-    std::string directory;
-    void processNode(aiNode *node, const aiScene *scene);
-    Mesh processMesh(aiMesh *mesh, const aiScene *scene);
-    Texture processMaterial(aiMaterial *material, aiTextureType type);
-    unsigned int processTexture(std::string &name);
+    void processNode(aiNode *node, const aiScene *scene, std::string &directory);
+    Mesh processMesh(aiMesh *mesh, const aiScene *scene, std::string &directory);
+    QImage processTexture(aiMaterial *material, aiTextureType type, std::string &directory);
 
 public:
+    Model();
     Model(const std::string &path);
     ~Model();
-    void render(Shader &shader);
+    void bind(QOpenGLShaderProgram &program);
+    void render(QOpenGLShaderProgram &program);
 };
 
 #endif
