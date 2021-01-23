@@ -35,7 +35,7 @@ private:
     void wheelEvent(QWheelEvent *event) override;
 
 public:
-    RenderWidget(QWidget *parent, const std::string &path);
+    RenderWidget(QWidget *parent, Model &model);
     ~RenderWidget() override;
 };
 

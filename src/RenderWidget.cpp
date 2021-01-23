@@ -1,10 +1,9 @@
 #include "RenderWidget.h"
 
-RenderWidget::RenderWidget(QWidget *parent, const std::string &path) : QOpenGLWidget(parent) {
+RenderWidget::RenderWidget(QWidget *parent, Model &model) : QOpenGLWidget(parent) {
     press = false;
     factor = 1.0f;
-    if (!path.empty())
-        model = Model(path);
+    this->model = model;
 }
 
 RenderWidget::~RenderWidget() {}
