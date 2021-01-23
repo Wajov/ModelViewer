@@ -7,6 +7,7 @@
 
 #include <QVector3D>
 #include <QMatrix4x4>
+#include <QWidget>
 #include <QOpenGLWidget>
 #include <QOpenGLFunctions>
 #include <QOpenGLShader>
@@ -23,7 +24,7 @@ private:
     int lastX, lastY;
     float factor;
     QMatrix4x4 rotate;
-    Model *model;
+    Model model;
     QOpenGLShaderProgram program;
     void initializeGL() override;
     void paintGL() override;
@@ -34,9 +35,8 @@ private:
     void wheelEvent(QWheelEvent *event) override;
 
 public:
-    RenderWidget();
+    RenderWidget(QWidget *parent, const std::string &path);
     ~RenderWidget() override;
-    void setModel(const std::string &path);
 };
 
 #endif

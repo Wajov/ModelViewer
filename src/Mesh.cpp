@@ -21,7 +21,7 @@ Mesh::~Mesh() {
 
 void Mesh::processTexture(QOpenGLTexture *texture) {
     texture->setWrapMode(QOpenGLTexture::Repeat);
-    texture->setMinificationFilter(QOpenGLTexture::LinearMipMapLinear);
+    texture->setMinificationFilter(QOpenGLTexture::Linear);
     texture->setMagnificationFilter(QOpenGLTexture::Linear);
     texture->generateMipMaps();
 }

@@ -1,8 +1,7 @@
 #include "RenderWindow.h"
 
 RenderWindow::RenderWindow(int width, int height) : QMainWindow() {
-    widget = new RenderWidget();
-    widget->setParent(this);
+    widget = new RenderWidget(this, "");
     setCentralWidget(widget);
     resize(width, height);
 
@@ -17,9 +16,10 @@ RenderWindow::RenderWindow(int width, int height) : QMainWindow() {
 RenderWindow::~RenderWindow() {}
 
 void RenderWindow::selectModel() {
-    QFileDialog fileDialog(this);
-    if (fileDialog.exec()) {
-        QStringList files = fileDialog.selectedFiles();
-        widget->setModel(files[0].toStdString());
-    }
+    QString path = QFileDialog::getOpenFileName(this,"打开",".","");
+    std::cout << path.toStdString() << std::endl;
+    delete widget;
+    widget = new RenderWidget(this, path.toStdString());
+    widget->setParent(this);
+    setCentralWidget(widget);
 }

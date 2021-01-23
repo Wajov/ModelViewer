@@ -1,9 +1,10 @@
 #include "RenderWidget.h"
 
-RenderWidget::RenderWidget() : QOpenGLWidget() {
+RenderWidget::RenderWidget(QWidget *parent, const std::string &path) : QOpenGLWidget(parent) {
     press = false;
     factor = 1.0f;
-    model = new Model();
+    if (!path.empty())
+        model = Model(path);
 }
 
 RenderWidget::~RenderWidget() {}
@@ -11,6 +12,7 @@ RenderWidget::~RenderWidget() {}
 void RenderWidget::initializeGL() {
     initializeOpenGLFunctions();
 
+    program.setParent(this);
     if (!program.addShaderFromSourceFile(QOpenGLShader::Vertex, "shader/VertexShader.glsl")) {
         std::cerr << "Failed to add vertex shader" << std::endl;
         return;
@@ -25,7 +27,7 @@ void RenderWidget::initializeGL() {
     }
 
     glEnable(GL_DEPTH_TEST);
-    model->bind(program);
+    model.bind(program);
 }
 
 void RenderWidget::paintGL() {
@@ -46,9 +48,7 @@ void RenderWidget::paintGL() {
     program.setUniformValue("projection", projectionMat);
     program.setUniformValue("lightDirection", lightDirection);
     program.setUniformValue("cameraPosition", cameraPosition);
-    model->render(program);
-
-    program.release();
+    model.render(program);
 }
 
 void RenderWidget::resizeGL(int w, int h) {
@@ -81,14 +81,7 @@ void RenderWidget::mouseMoveEvent(QMouseEvent *event) {
 }
 
 void RenderWidget::wheelEvent(QWheelEvent *event) {
-    factor += (float)event->angleDelta().y() * 0.01f;
+    factor += (float)event->angleDelta().y() * 1e-3f;
     factor = std::max(factor, 0.01f);
-    update();
-}
-
-void RenderWidget::setModel(const std::string &path) {
-    delete model;
-    model = new Model(path);
-    model->bind(program);
     update();
 }

@@ -8,7 +8,6 @@
 #include <QMenu>
 #include <QAction>
 #include <QFileDialog>
-#include <QStringList>
 
 #include "Model.h"
 #include "RenderWidget.h"
