@@ -29,11 +29,11 @@ void main() {
 
     vec3 N = normalize(normalExist == 1 ? mat3(vertexTangent, vertexBitangent, vertexNormal) * (vec3(texture(normalTexture, vertexUV)) * 2 - vec3(1)) : vertexNormal);
     vec3 L = normalize(lightPosition - vertexPosition);
-    vec3 diffuse = (diffuseExist == 1 ? diffuseColor * vec3(texture(diffuseTexture, vertexUV)) : diffuseColor) * clamp(dot(N, L), 0, 1) * lightPower / (distance * distance);
+    vec3 diffuse = (diffuseExist == 1 ? diffuseColor * vec3(texture(diffuseTexture, vertexUV)) : diffuseColor) * max(dot(N, L), 0) * lightPower / (distance * distance);
 
     vec3 V = normalize(cameraPosition - vertexPosition);
     vec3 H = normalize(L + V);
-    vec3 specular = (specularExist == 1 ? specularColor * vec3(texture(specularTexture, vertexUV)) : specularColor) * pow(clamp(dot(N, H), 0, 1), shininess) * lightPower / (distance * distance);
+    vec3 specular = (specularExist == 1 ? specularColor * vec3(texture(specularTexture, vertexUV)) : specularColor) * pow(max(dot(N, H), 0), shininess) * lightPower / (distance * distance);
 
     gl_FragColor = vec4(ambient + diffuse + specular, 1);
 }
