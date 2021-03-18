@@ -61,12 +61,23 @@ Mesh Model::processMesh(aiMesh *mesh, const aiScene *scene, std::string &directo
             indices.push_back(mesh->mFaces[i].mIndices[j]);
 
     aiMaterial *material = scene->mMaterials[mesh->mMaterialIndex];
-    QImage ambient = processTexture(material, aiTextureType_AMBIENT, directory);
-    QImage diffuse = processTexture(material, aiTextureType_DIFFUSE, directory);
-    QImage specular = processTexture(material, aiTextureType_SPECULAR, directory);
-    QImage normal = processTexture(material, aiTextureType_HEIGHT, directory);
 
-    return Mesh(vertices, indices, ambient, diffuse, specular, normal);
+    aiColor3D ambient, diffuse, specular;
+    float shininess;
+    material->Get(AI_MATKEY_COLOR_AMBIENT, ambient);
+    material->Get(AI_MATKEY_COLOR_DIFFUSE, diffuse);
+    material->Get(AI_MATKEY_COLOR_SPECULAR, specular);
+    material->Get(AI_MATKEY_SHININESS, shininess);
+    QVector3D ambientColor(ambient.r, ambient.g, ambient.b);
+    QVector3D diffuseColor(diffuse.r, diffuse.g, diffuse.b);
+    QVector3D specularColor(specular.r, specular.g, specular.b);
+
+    QImage ambientImage = processTexture(material, aiTextureType_AMBIENT, directory);
+    QImage diffuseImage = processTexture(material, aiTextureType_DIFFUSE, directory);
+    QImage specularImage = processTexture(material, aiTextureType_SPECULAR, directory);
+    QImage normalImage = processTexture(material, aiTextureType_HEIGHT, directory);
+
+    return Mesh(vertices, indices, ambientColor, diffuseColor, specularColor, shininess, ambientImage, diffuseImage, specularImage, normalImage);
 }
 
 QImage Model::processTexture(aiMaterial *material, aiTextureType type, std::string &directory) {

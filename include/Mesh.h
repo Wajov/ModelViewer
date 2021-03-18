@@ -19,6 +19,8 @@ class Mesh : protected QOpenGLFunctions {
 private:
     std::vector<Vertex> vertices;
     std::vector<unsigned int> indices;
+    QVector3D ambientColor, diffuseColor, specularColor;
+    float shininess;
     QImage ambientImage, diffuseImage, specularImage, normalImage;
     QOpenGLTexture *ambientTexture, *diffuseTexture, *specularTexture, *normalTexture;
     QOpenGLVertexArrayObject *vao;
@@ -26,7 +28,7 @@ private:
     void processTexture(QOpenGLTexture *texture);
 
 public:
-    Mesh(std::vector<Vertex> &vertices, std::vector<unsigned int> &indices, QImage &ambientImage, QImage &diffuseImage, QImage &specularImage, QImage &normalImage);
+    Mesh(std::vector<Vertex> &vertices, std::vector<unsigned int> &indices, QVector3D &ambientColor, QVector3D &diffuseColor, QVector3D &specularColor, float shininess, QImage &ambientImage, QImage &diffuseImage, QImage &specularImage, QImage &normalImage);
     ~Mesh();
     void coordinateRange(float &xMin, float &xMax, float &yMin, float &yMax, float &zMin, float &zMax);
     void recenter(QVector3D &center);

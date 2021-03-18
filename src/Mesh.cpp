@@ -1,8 +1,12 @@
 #include "Mesh.h"
 
-Mesh::Mesh(std::vector<Vertex> &vertices, std::vector<unsigned int> &indices, QImage &ambientImage, QImage &diffuseImage, QImage &specularImage, QImage &normalImage) {
+Mesh::Mesh(std::vector<Vertex> &vertices, std::vector<unsigned int> &indices, QVector3D &ambientColor, QVector3D &diffuseColor, QVector3D &specularColor, float shininess, QImage &ambientImage, QImage &diffuseImage, QImage &specularImage, QImage &normalImage) {
     this->vertices = vertices;
     this->indices = indices;
+    this->ambientColor = ambientColor;
+    this->diffuseColor = diffuseColor;
+    this->specularColor = specularColor;
+    this->shininess = shininess;
     this->ambientImage = ambientImage;
     this->diffuseImage = diffuseImage;
     this->specularImage = specularImage;
@@ -99,6 +103,11 @@ void Mesh::bind(QOpenGLShaderProgram &program) {
 }
 
 void Mesh::render(QOpenGLShaderProgram &program) {
+    program.setUniformValue("ambientColor", ambientColor);
+    program.setUniformValue("diffuseColor", diffuseColor);
+    program.setUniformValue("specularColor", specularColor);
+    program.setUniformValue("shininess", shininess);
+
     program.setUniformValue("ambientExist", ambientTexture != nullptr);
     if (ambientTexture != nullptr) {
         program.setUniformValue("ambientTexture", 0);

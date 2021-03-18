@@ -35,7 +35,8 @@ void RenderWidget::paintGL() {
 
     program.bind();
 
-    QVector3D lightDirection(0.0f, 0.0f, -1.0f), cameraPosition(0.0f, 0.0f, 5.0f);
+    float lightPower = 50.0f;
+    QVector3D lightPosition(3.0f, 3.0f, 3.0f), cameraPosition(0.0f, 0.0f, 5.0f);
     QMatrix4x4 modelMat, viewMat, projectionMat;
     modelMat = rotate;
     modelMat.scale(factor);
@@ -45,7 +46,8 @@ void RenderWidget::paintGL() {
     program.setUniformValue("model", modelMat);
     program.setUniformValue("view", viewMat);
     program.setUniformValue("projection", projectionMat);
-    program.setUniformValue("lightDirection", lightDirection);
+    program.setUniformValue("lightPower", lightPower);
+    program.setUniformValue("lightPosition", lightPosition);
     program.setUniformValue("cameraPosition", cameraPosition);
     model.render(program);
 }
