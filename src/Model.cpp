@@ -1,64 +1,62 @@
-#include "Model.h"
+#include <algorithm>
+#include <iostream>
 
-Model::Model() {}
+#include <assimp/Importer.hpp>
+#include <assimp/postprocess.h>
 
-Model::Model(const std::string &path) {
+#include "Model.hpp"
+
+Model::Model(const std::string& path) {
     Assimp::Importer importer;
-    const aiScene *scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_GenSmoothNormals | aiProcess_CalcTangentSpace);
+    const aiScene *scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs |
+        aiProcess_GenSmoothNormals | aiProcess_CalcTangentSpace);
 
-    if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
+    if (!scene || scene->mFlags&  AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
         std::cerr << "Failed to load model:" << std::endl << importer.GetErrorString() << std::endl;
         return;
     }
 
     std::string directory = path.substr(0, path.find_last_of('/'));
     processNode(scene->mRootNode, scene, directory);
+}
 
-    float xMin, xMax, yMin, yMax, zMin, zMax;
-    xMin = yMin = zMin = FLT_MAX;
-    xMax = yMax = zMax = -FLT_MAX;
-    for (Mesh &mesh : meshes) {
-        float xMinTemp, xMaxTemp, yMinTemp, yMaxTemp, zMinTemp, zMaxTemp;
-        mesh.coordinateRange(xMinTemp, xMaxTemp, yMinTemp, yMaxTemp, zMinTemp, zMaxTemp);
-        xMin = std::min(xMin, xMinTemp);
-        xMax = std::max(xMax, xMaxTemp);
-        yMin = std::min(yMin, yMinTemp);
-        yMax = std::max(yMax, yMaxTemp);
-        zMin = std::min(zMin, zMinTemp);
-        zMax = std::max(zMax, zMaxTemp);
+Model::~Model() {
+    for (const Mesh* mesh : meshes) {
+        delete mesh;
     }
-    QVector3D center((xMin + xMax) / 2, (yMin + yMax) / 2, (zMin + zMax) / 2);
-    for (Mesh &mesh : meshes)
-        mesh.recenter(center);
+    delete shader;
 }
 
-Model::~Model() {}
-
-void Model::processNode(aiNode *node, const aiScene *scene, std::string &directory) {
-    for (unsigned int i = 0; i < node->mNumMeshes; i++)
+void Model::processNode(aiNode *node, const aiScene *scene, const std::string& directory) {
+    for (unsigned int i = 0; i < node->mNumMeshes; i++) {
         meshes.push_back(processMesh(scene->mMeshes[node->mMeshes[i]], scene, directory));
-    for (unsigned int i = 0; i < node->mNumChildren; i++)
+    }
+    for (unsigned int i = 0; i < node->mNumChildren; i++) {
         processNode(node->mChildren[i], scene, directory);
+    }
 }
 
-Mesh Model::processMesh(aiMesh *mesh, const aiScene *scene, std::string &directory) {
+Mesh* Model::processMesh(aiMesh *mesh, const aiScene *scene, const std::string& directory) {
     std::vector<Vertex> vertices;
     for (unsigned int i = 0; i < mesh->mNumVertices; i++) {
-        QVector3D position(mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z);
-        QVector3D normal(mesh->mNormals[i].x, mesh->mNormals[i].y, mesh->mNormals[i].z);
+        Vector3f position(mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z);
+        Vector3f normal(mesh->mNormals[i].x, mesh->mNormals[i].y, mesh->mNormals[i].z);
         if (mesh->mTextureCoords[0] != nullptr) {
-            QVector3D tangent(mesh->mTangents[i].x, mesh->mTangents[i].y, mesh->mTangents[i].z);
-            QVector3D bitangent(mesh->mBitangents[i].x, mesh->mBitangents[i].y, mesh->mBitangents[i].z);
-            QVector2D uv(mesh->mTextureCoords[0][i].x, mesh->mTextureCoords[0][i].y);
+            Vector3f tangent(mesh->mTangents[i].x, mesh->mTangents[i].y, mesh->mTangents[i].z);
+            Vector3f bitangent(mesh->mBitangents[i].x, mesh->mBitangents[i].y, mesh->mBitangents[i].z);
+            Vector2f uv(mesh->mTextureCoords[0][i].x, mesh->mTextureCoords[0][i].y);
             vertices.push_back(Vertex(position, normal, tangent, bitangent, uv));
-        } else
+        } else {
             vertices.push_back(Vertex(position, normal));
+        }
     }
 
     std::vector<unsigned int> indices;
-    for (unsigned int i = 0; i < mesh->mNumFaces; i++)
-        for (unsigned int j = 0; j < mesh->mFaces[i].mNumIndices; j++)
+    for (unsigned int i = 0; i < mesh->mNumFaces; i++) {
+        for (unsigned int j = 0; j < mesh->mFaces[i].mNumIndices; j++) {
             indices.push_back(mesh->mFaces[i].mIndices[j]);
+        }
+    }
 
     aiMaterial *material = scene->mMaterials[mesh->mMaterialIndex];
 
@@ -68,34 +66,56 @@ Mesh Model::processMesh(aiMesh *mesh, const aiScene *scene, std::string &directo
     material->Get(AI_MATKEY_COLOR_DIFFUSE, diffuse);
     material->Get(AI_MATKEY_COLOR_SPECULAR, specular);
     material->Get(AI_MATKEY_SHININESS, shininess);
-    QVector3D ambientColor(ambient.r, ambient.g, ambient.b);
-    QVector3D diffuseColor(diffuse.r, diffuse.g, diffuse.b);
-    QVector3D specularColor(specular.r, specular.g, specular.b);
+    Vector3f ambientColor = Vector3f(ambient.r, ambient.g, ambient.b);
+    Vector3f diffuseColor = Vector3f(diffuse.r, diffuse.g, diffuse.b);
+    Vector3f specularColor = Vector3f(specular.r, specular.g, specular.b);
+    shininess = std::max(shininess, 0.0f);
 
-    QImage ambientImage = processTexture(material, aiTextureType_AMBIENT, directory);
-    QImage diffuseImage = processTexture(material, aiTextureType_DIFFUSE, directory);
-    QImage specularImage = processTexture(material, aiTextureType_SPECULAR, directory);
-    QImage normalImage = processTexture(material, aiTextureType_HEIGHT, directory);
+    Image* ambientImage = processTexture(material, aiTextureType_AMBIENT, directory);
+    Image* diffuseImage = processTexture(material, aiTextureType_DIFFUSE, directory);
+    Image* specularImage = processTexture(material, aiTextureType_SPECULAR, directory);
+    Image* normalImage = processTexture(material, aiTextureType_HEIGHT, directory);
 
-    return Mesh(vertices, indices, ambientColor, diffuseColor, specularColor, shininess, ambientImage, diffuseImage, specularImage, normalImage);
+    if (ambient.IsBlack() && diffuse.IsBlack() && specular.IsBlack() && ambientImage == nullptr &&
+        diffuseImage == nullptr && specularImage == nullptr) {
+        ambientColor = Vector3f(0.1f, 0.1f, 0.1f);
+        diffuseColor = Vector3f(0.6f, 0.6f, 0.6f);
+        specularColor = Vector3f(0.3f, 0.3f, 0.3f);
+    }
+
+    return new Mesh(vertices, indices, ambientColor, diffuseColor, specularColor, shininess, ambientImage, diffuseImage,
+        specularImage, normalImage);
 }
 
-QImage Model::processTexture(aiMaterial *material, aiTextureType type, std::string &directory) {
+Image* Model::processTexture(aiMaterial *material, aiTextureType type, const std::string& directory) {
     if (material->GetTextureCount(type) > 0) {
         aiString nameTemp;
         material->GetTexture(type, 0, &nameTemp);
-        std::string name = nameTemp.C_Str();
-        return QImage((directory + "/" + name).c_str());
-    } else
-        return QImage();
+        std::string filename = nameTemp.C_Str();
+        return new Image(directory + "/" + filename);
+    } else {
+        return nullptr;
+    }
 }
 
-void Model::bind(QOpenGLShaderProgram &program) {
-    for (Mesh &mesh : meshes)
-        mesh.bind(program);
+void Model::bind() {
+    shader = new Shader("shader/Vertex.glsl", "shader/Fragment.glsl");
+    for (Mesh* mesh : meshes) {
+        mesh->bind();
+    }
 }
 
-void Model::render(QOpenGLShaderProgram &program) {
-    for (Mesh &mesh : meshes)
-        mesh.render(program);
+void Model::render(const Matrix4x4f& model, const Matrix4x4f& view, const Matrix4x4f& projection,
+    const Vector3f& cameraPosition, const Vector3f& lightDirection) const {
+    shader->use();
+    shader->setMat4("model", model);
+    shader->setMat4("view", view);
+    shader->setMat4("projection", projection);
+    shader->setVec3("color", Vector3f(0.6f, 0.7f, 1.0f));
+    shader->setVec3("cameraPosition", cameraPosition);
+    shader->setVec3("lightDirection", lightDirection);
+
+    for (const Mesh* mesh : meshes) {
+        mesh->render(shader);
+    }
 }
