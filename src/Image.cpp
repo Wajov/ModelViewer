@@ -12,18 +12,18 @@ Image::~Image() {
     stbi_image_free(data);
 }
 
-int Image::getWidth() const {
+int Image::GetWidth() const {
     return width;
 }
 
-int Image::getHeight() const {
+int Image::GetHeight() const {
     return height;
 }
 
-int Image::getChannels() const {
+int Image::GetChannels() const {
     return channels;
 }
 
-unsigned char* Image::getData() const {
+unsigned char* Image::GetData() const {
     return data;
 }

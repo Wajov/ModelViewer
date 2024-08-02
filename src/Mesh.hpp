@@ -16,15 +16,15 @@ private:
     Image* ambientImage, * diffuseImage, * specularImage, * normalImage;
     float shininess;
     unsigned int vao, vbo, ebo, ambientTexture, diffuseTexture, specularTexture, normalTexture;
-    void processTexture(unsigned int texture, const Image* image) const;
+    void BindTexture(unsigned int texture, const Image* image) const;
 
 public:
     Mesh(std::vector<Vertex>& vertices, std::vector<unsigned int>& indices, Vector3f& ambientColor,
         Vector3f& diffuseColor, Vector3f& specularColor, float shininess, Image* ambientImage, Image* diffuseImage,
         Image* specularImage, Image* normalImage);
     ~Mesh();
-    void bind();
-    void render(const Shader* shader) const;
+    void Bind();
+    void Render(const Shader* shader) const;
 };
 
 #endif

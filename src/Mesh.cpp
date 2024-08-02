@@ -25,10 +25,10 @@ Mesh::~Mesh() {
     delete normalImage;
 }
 
-void Mesh::processTexture(unsigned int texture, const Image* image) const {
+void Mesh::BindTexture(unsigned int texture, const Image* image) const {
     glBindTexture(GL_TEXTURE_2D, texture);
     unsigned int format;
-    switch (image->getChannels()) {
+    switch (image->GetChannels()) {
         case 3:
             format = GL_RGB;
             break;
@@ -39,8 +39,8 @@ void Mesh::processTexture(unsigned int texture, const Image* image) const {
             std::cerr << "Unsupported image format!" << std::endl;
             return;
     }
-    glTexImage2D(GL_TEXTURE_2D, 0, format, image->getWidth(), image->getHeight(), 0, format, GL_UNSIGNED_BYTE,
-        image->getData());
+    glTexImage2D(GL_TEXTURE_2D, 0, format, image->GetWidth(), image->GetHeight(), 0, format, GL_UNSIGNED_BYTE,
+        image->GetData());
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
@@ -48,7 +48,7 @@ void Mesh::processTexture(unsigned int texture, const Image* image) const {
     glGenerateMipmap(GL_TEXTURE_2D);
 }
 
-void Mesh::bind() {
+void Mesh::Bind() {
     glGenVertexArrays(1, &vao);
     glBindVertexArray(vao);
 
@@ -70,57 +70,61 @@ void Mesh::bind() {
     glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), reinterpret_cast<void*>(offsetof(Vertex, bitangent)));
     glEnableVertexAttribArray(4);
     glVertexAttribPointer(4, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), reinterpret_cast<void*>(offsetof(Vertex, uv)));
+    glEnableVertexAttribArray(5);
+    glVertexAttribIPointer(5, 4, GL_INT, sizeof(Vertex), reinterpret_cast<void*>(offsetof(Vertex, boneIds)));
+    glEnableVertexAttribArray(6);
+    glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), reinterpret_cast<void*>(offsetof(Vertex, boneWeights)));
 
     glBindVertexArray(0);
 
     if (ambientImage != nullptr) {
         glGenTextures(1, &ambientTexture);
-        processTexture(ambientTexture, ambientImage);
+        BindTexture(ambientTexture, ambientImage);
     }
     if (diffuseImage != nullptr) {
         glGenTextures(1, &diffuseTexture);
-        processTexture(diffuseTexture, diffuseImage);
+        BindTexture(diffuseTexture, diffuseImage);
     }
     if (specularImage != nullptr) {
         glGenTextures(1, &specularTexture);
-        processTexture(specularTexture, specularImage);
+        BindTexture(specularTexture, specularImage);
     }
     if (normalImage != nullptr) {
         glGenTextures(1, &normalTexture);
-        processTexture(normalTexture, normalImage);
+        BindTexture(normalTexture, normalImage);
     }
 }
 
-void Mesh::render(const Shader* shader) const {
-    shader->setVec3("ambientColor", ambientColor);
-    shader->setVec3("diffuseColor", diffuseColor);
-    shader->setVec3("specularColor", specularColor);
-    shader->setFloat("shininess", shininess);
+void Mesh::Render(const Shader* shader) const {
+    shader->SetVec3("ambientColor", ambientColor);
+    shader->SetVec3("diffuseColor", diffuseColor);
+    shader->SetVec3("specularColor", specularColor);
+    shader->SetFloat("shininess", shininess);
 
-    shader->setInt("ambientExist", ambientImage != nullptr);
+    shader->SetInt("ambientExist", ambientImage != nullptr);
     if (ambientImage != nullptr) {
-        shader->setInt("ambientTexture", 0);
+        shader->SetInt("ambientTexture", 0);
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, ambientTexture);
     }
 
-    shader->setInt("diffuseExist", diffuseImage != nullptr);
+    shader->SetInt("diffuseExist", diffuseImage != nullptr);
     if (diffuseImage != nullptr) {
-        shader->setInt("diffuseTexture", 1);
+        shader->SetInt("diffuseTexture", 1);
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, diffuseTexture);
     }
 
-    shader->setInt("specularExist", specularImage != nullptr);
+    shader->SetInt("specularExist", specularImage != nullptr);
     if (specularImage != nullptr) {
-        shader->setInt("specularTexture", 2);
+        shader->SetInt("specularTexture", 2);
         glActiveTexture(GL_TEXTURE2);
         glBindTexture(GL_TEXTURE_2D, specularTexture);
     }
 
-    shader->setInt("normalExist", normalImage != nullptr);
+    shader->SetInt("normalExist", normalImage != nullptr);
     if (normalImage != nullptr) {
-        shader->setInt("normalTexture", 3);
+        shader->SetInt("normalTexture", 3);
         glActiveTexture(GL_TEXTURE3);
         glBindTexture(GL_TEXTURE_2D, normalTexture);
     }

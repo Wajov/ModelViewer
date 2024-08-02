@@ -8,16 +8,15 @@
 
 Model::Model(const std::string& path) {
     Assimp::Importer importer;
-    const aiScene *scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs |
+    const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs |
         aiProcess_GenSmoothNormals | aiProcess_CalcTangentSpace);
-
-    if (!scene || scene->mFlags&  AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
+    if (!scene || !scene->mRootNode || (scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE)) {
         std::cerr << "Failed to load model:" << std::endl << importer.GetErrorString() << std::endl;
         return;
     }
 
     std::string directory = path.substr(0, path.find_last_of('/'));
-    processNode(scene->mRootNode, scene, directory);
+    ProcessNode(scene->mRootNode, scene, directory);
 }
 
 Model::~Model() {
@@ -27,16 +26,16 @@ Model::~Model() {
     delete shader;
 }
 
-void Model::processNode(aiNode *node, const aiScene *scene, const std::string& directory) {
+void Model::ProcessNode(aiNode* node, const aiScene* scene, const std::string& directory) {
     for (unsigned int i = 0; i < node->mNumMeshes; i++) {
-        meshes.push_back(processMesh(scene->mMeshes[node->mMeshes[i]], scene, directory));
+        meshes.push_back(ProcessMesh(scene->mMeshes[node->mMeshes[i]], scene, directory));
     }
     for (unsigned int i = 0; i < node->mNumChildren; i++) {
-        processNode(node->mChildren[i], scene, directory);
+        ProcessNode(node->mChildren[i], scene, directory);
     }
 }
 
-Mesh* Model::processMesh(aiMesh *mesh, const aiScene *scene, const std::string& directory) {
+Mesh* Model::ProcessMesh(aiMesh* mesh, const aiScene* scene, const std::string& directory) {
     std::vector<Vertex> vertices;
     for (unsigned int i = 0; i < mesh->mNumVertices; i++) {
         Vector3f position(mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z);
@@ -45,9 +44,9 @@ Mesh* Model::processMesh(aiMesh *mesh, const aiScene *scene, const std::string& 
             Vector3f tangent(mesh->mTangents[i].x, mesh->mTangents[i].y, mesh->mTangents[i].z);
             Vector3f bitangent(mesh->mBitangents[i].x, mesh->mBitangents[i].y, mesh->mBitangents[i].z);
             Vector2f uv(mesh->mTextureCoords[0][i].x, mesh->mTextureCoords[0][i].y);
-            vertices.push_back(Vertex(position, normal, tangent, bitangent, uv));
+            vertices.emplace_back(position, normal, tangent, bitangent, uv);
         } else {
-            vertices.push_back(Vertex(position, normal));
+            vertices.emplace_back(position, normal);
         }
     }
 
@@ -58,7 +57,7 @@ Mesh* Model::processMesh(aiMesh *mesh, const aiScene *scene, const std::string& 
         }
     }
 
-    aiMaterial *material = scene->mMaterials[mesh->mMaterialIndex];
+    aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
 
     aiColor3D ambient, diffuse, specular;
     float shininess;
@@ -71,10 +70,10 @@ Mesh* Model::processMesh(aiMesh *mesh, const aiScene *scene, const std::string& 
     Vector3f specularColor = Vector3f(specular.r, specular.g, specular.b);
     shininess = std::max(shininess, 0.0f);
 
-    Image* ambientImage = processTexture(material, aiTextureType_AMBIENT, directory);
-    Image* diffuseImage = processTexture(material, aiTextureType_DIFFUSE, directory);
-    Image* specularImage = processTexture(material, aiTextureType_SPECULAR, directory);
-    Image* normalImage = processTexture(material, aiTextureType_HEIGHT, directory);
+    Image* ambientImage = ProcessTexture(material, aiTextureType_AMBIENT, directory);
+    Image* diffuseImage = ProcessTexture(material, aiTextureType_DIFFUSE, directory);
+    Image* specularImage = ProcessTexture(material, aiTextureType_SPECULAR, directory);
+    Image* normalImage = ProcessTexture(material, aiTextureType_HEIGHT, directory);
 
     if (ambient.IsBlack() && diffuse.IsBlack() && specular.IsBlack() && ambientImage == nullptr &&
         diffuseImage == nullptr && specularImage == nullptr) {
@@ -83,11 +82,13 @@ Mesh* Model::processMesh(aiMesh *mesh, const aiScene *scene, const std::string& 
         specularColor = Vector3f(0.3f, 0.3f, 0.3f);
     }
 
+    ProcessBones(mesh, scene, vertices);
+
     return new Mesh(vertices, indices, ambientColor, diffuseColor, specularColor, shininess, ambientImage, diffuseImage,
         specularImage, normalImage);
 }
 
-Image* Model::processTexture(aiMaterial *material, aiTextureType type, const std::string& directory) {
+Image* Model::ProcessTexture(aiMaterial* material, aiTextureType type, const std::string& directory) {
     if (material->GetTextureCount(type) > 0) {
         aiString nameTemp;
         material->GetTexture(type, 0, &nameTemp);
@@ -98,24 +99,65 @@ Image* Model::processTexture(aiMaterial *material, aiTextureType type, const std
     }
 }
 
-void Model::bind() {
-    shader = new Shader("shader/Vertex.glsl", "shader/Fragment.glsl");
-    for (Mesh* mesh : meshes) {
-        mesh->bind();
+void Model::ProcessBones(aiMesh* mesh, const aiScene* scene, std::vector<Vertex>& vertices) {
+    for (int i = 0; i < mesh->mNumBones; i++) {
+        std::string boneName = mesh->mBones[i]->mName.C_Str();
+        if (boneInfos.find(boneName) == boneInfos.end()) {
+            aiMatrix4x4 offset = mesh->mBones[i]->mOffsetMatrix;
+            BoneInfo boneInfo;
+            boneInfo.index = boneInfos.size();
+            boneInfo.offset << offset.a1, offset.a2, offset.a3, offset.a4, offset.b1, offset.b2, offset.b3, offset.b4,
+                offset.c1, offset.c2, offset.c3, offset.c4, offset.d1, offset.d2, offset.d3, offset.d4;
+            boneInfos[boneName] = boneInfo;
+        }
+        int boneId = boneInfos[boneName].index;
+
+        aiVertexWeight* weights = mesh->mBones[i]->mWeights;
+        for (int j = 0; j < mesh->mBones[i]->mNumWeights; j++) {
+            int index = weights[j].mVertexId;
+            float weight = weights[j].mWeight;
+            for (int k = 0; k < Vertex::MAX_BONE_INFLUENCE; k++) {
+                if (vertices[index].boneIds[k] < 0) {
+                    vertices[index].boneIds[k] = boneId;
+                    vertices[index].boneWeights[k] = weight;
+                }
+            }
+        }
     }
 }
 
-void Model::render(const Matrix4x4f& model, const Matrix4x4f& view, const Matrix4x4f& projection,
+std::map<std::string, BoneInfo>& Model::GetBoneInfos() {
+    return boneInfos;
+}
+
+void Model::Bind() {
+    shader = new Shader("shader/Vertex.glsl", "shader/Fragment.glsl");
+    for (Mesh* mesh : meshes) {
+        mesh->Bind();
+    }
+}
+
+void Model::SetAnimationExist(bool exist) const {
+    shader->SetInt("animationExist", exist);
+}
+
+void Model::SetFinalBoneMatrices(const std::vector<Matrix4x4f>& finalBoneMatrices) const {
+    for (int i = 0; i < finalBoneMatrices.size(); i++) {
+        shader->SetMat4("finalBoneMatrices[" + std::to_string(i) + "]", finalBoneMatrices[i]);
+    }
+}
+
+void Model::Render(const Matrix4x4f& model, const Matrix4x4f& view, const Matrix4x4f& projection,
     const Vector3f& cameraPosition, const Vector3f& lightDirection) const {
-    shader->use();
-    shader->setMat4("model", model);
-    shader->setMat4("view", view);
-    shader->setMat4("projection", projection);
-    shader->setVec3("color", Vector3f(0.6f, 0.7f, 1.0f));
-    shader->setVec3("cameraPosition", cameraPosition);
-    shader->setVec3("lightDirection", lightDirection);
+    shader->Use();
+    shader->SetMat4("model", model);
+    shader->SetMat4("view", view);
+    shader->SetMat4("projection", projection);
+    shader->SetVec3("color", Vector3f(0.6f, 0.7f, 1.0f));
+    shader->SetVec3("cameraPosition", cameraPosition);
+    shader->SetVec3("lightDirection", lightDirection);
 
     for (const Mesh* mesh : meshes) {
-        mesh->render(shader);
+        mesh->Render(shader);
     }
 }

@@ -11,10 +11,10 @@ private:
 public:
     Image(const std::string& path);
     ~Image();
-    int getWidth() const;
-    int getHeight() const;
-    int getChannels() const;
-    unsigned char* getData() const;
+    int GetWidth() const;
+    int GetHeight() const;
+    int GetChannels() const;
+    unsigned char* GetData() const;
 };
 
 #endif

@@ -4,7 +4,9 @@
         "cwd": "${workspaceFolder}",
         "args": [
             // "model/cylinder/cylinder.obj"
-            "model/nanosuit/nanosuit.obj"
+            // "model/nanosuit/nanosuit.obj"
+            "model/vampire/dancing_vampire.dae",
+            "model/vampire/dancing_vampire.dae"
         ]
     },
     "files.associations": {
@@ -85,6 +87,7 @@
         "unordered_map": "cpp",
         "xhash": "cpp",
         "xtree": "cpp",
-        "geometry": "cpp"
+        "geometry": "cpp",
+        "unordered_set": "cpp"
     }
 }
