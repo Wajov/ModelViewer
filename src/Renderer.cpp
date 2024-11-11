@@ -134,5 +134,5 @@ Matrix4x4f Renderer::GetView() const {
 }
 
 Matrix4x4f Renderer::GetProjection() const {
-    return Perspective(45.0f, static_cast<float>(width) / height, 0.1f, 100.0f);
+    return Perspective(0.5f * M_PI, static_cast<float>(width) / height, 0.1f, 100.0f);
 }
